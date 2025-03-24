@@ -93,3 +93,28 @@ Don't hesitate to contact us if you are interested.
                        Good luck with your simulations!
 
                               The GROMACS Crew
+I have done the following changes
+0. cmake/gmxManageCuda.cmake and disable GMX_HAVE_GPU_GRAPH_SUPPORT by doing 
+if(${CUDA_VERSION} GREATER_EQUAL 11.1)
+        set(GMX_HAVE_GPU_GRAPH_SUPPORT OFF)
+endif()
+2. src/gromacs/gpu_utils/device_event.cuh  -->  in lines 81 - 94 due to cudaEventCreateWithFlags
+#    if GMX_HAVE_GPU_GRAPH_SUPPORT
+    //! Marks the synchronization point in the \p stream, for external event while capturing a CUDA graph.
+    inline void markExternalEventWhileCapturingGraph(const DeviceStream& deviceStream)
+    {
+        cudaError_t stat =
+                cudaEventRecord(event_, deviceStream.stream());
+        if (stat != cudaSuccess)
+        {
+            GMX_THROW(gmx::InternalError("cudaEventRecordWithFlags failed: "
+                                         + gmx::getDeviceErrorString(stat)));
+        }
+        isMarked_ = true;
+    }
+#    endif
+
+3. ~/third_party_exec/gromacs/gromacs-2024.4/src/gromacs/listed_forces/listed_forces_gpu_internal.cu 
+   ~/third_party_exec/gromacs/gromacs-2024.4/src/gromacs/ewald/pme_solve.cu
+
+  Add the following #define CUDART_PI_F 3.141592654f
